@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import re
 import requests
 
 payload = {
@@ -12,7 +13,21 @@ for i in range(3656, 3945):
     url = "https://www.ptt.cc/bbs/Beauty/index" + str(i) + ".html"
     result = rs.get(url)
     content = result.text
-
+    
     soup = BeautifulSoup(content, 'html.parser')
-    print(soup.find_all("div", {"class": "title"}))
-    print(soup.find_all("div", {"class": "date"}))
+    date_list = soup.find_all("div", {"class": "date"})
+    full_title_list = soup.find_all("div", {"class": "title"})
+    
+    for j in range(len(full_title_list)):
+        date = date_list[j]
+        date = re.sub("[^0-9]", "", date.text)
+        if len(date) == 3:
+            date = '0' + date
+        print(date)
+        
+        title = full_title_list[j].findChildren("a", recursive=False)[0].text
+        print(title)
+        
+        url = "https://www.ptt.cc" + \
+            full_title_list[j].findChildren("a", recursive=False)[0]['href']
+        print(url)
