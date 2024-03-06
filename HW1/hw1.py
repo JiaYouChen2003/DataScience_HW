@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import json
 import re
 import requests
 
@@ -7,27 +8,35 @@ payload = {
     'yes': 'yes'
 }
 rs = requests.session()
-rs.post("https://www.ptt.cc/ask/over18", data=payload)
+rs.post('https://www.ptt.cc/ask/over18', data=payload)
+
+jsonFile = open('articles.jsonl', 'w', encoding='utf8')
 
 for i in range(3656, 3945):
-    url = "https://www.ptt.cc/bbs/Beauty/index" + str(i) + ".html"
+    url = 'https://www.ptt.cc/bbs/Beauty/index' + str(i) + '.html'
     result = rs.get(url)
     content = result.text
     
     soup = BeautifulSoup(content, 'html.parser')
-    date_list = soup.find_all("div", {"class": "date"})
-    full_title_list = soup.find_all("div", {"class": "title"})
+    date_list = soup.find_all('div', {'class': 'date'})
+    full_title_list = soup.find_all('div', {'class': 'title'})
     
     for j in range(len(full_title_list)):
         date = date_list[j]
-        date = re.sub("[^0-9]", "", date.text)
+        date = re.sub('[^0-9]', '', date.text)
         if len(date) == 3:
             date = '0' + date
-        print(date)
         
-        title = full_title_list[j].findChildren("a", recursive=False)[0].text
-        print(title)
+        title = full_title_list[j].findChildren('a', recursive=False)[0].text
         
-        url = "https://www.ptt.cc" + \
-            full_title_list[j].findChildren("a", recursive=False)[0]['href']
-        print(url)
+        url = 'https://www.ptt.cc' + \
+            full_title_list[j].findChildren('a', recursive=False)[0]['href']
+        
+        rtcle = {
+            'date': date,
+            'title': title,
+            'url': url
+        }
+        
+        json.dump(rtcle, jsonFile, ensure_ascii=False)
+        jsonFile.write('\n')
