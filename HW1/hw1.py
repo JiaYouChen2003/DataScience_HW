@@ -10,7 +10,8 @@ payload = {
 rs = requests.session()
 rs.post('https://www.ptt.cc/ask/over18', data=payload)
 
-jsonFile = open('articles.jsonl', 'w', encoding='utf8')
+allArticlesJsonFile = open('articles.jsonl', 'w', encoding='utf8')
+popularArticlesJsonFile = open('popular_articles.jsonl', 'w', encoding='utf8')
 
 for i in range(3656, 3945):
     url = 'https://www.ptt.cc/bbs/Beauty/index' + str(i) + '.html'
@@ -18,6 +19,7 @@ for i in range(3656, 3945):
     content = result.text
     
     soup = BeautifulSoup(content, 'html.parser')
+    nrec_list = soup.find_all('div', {'class': 'nrec'})
     date_list = soup.find_all('div', {'class': 'date'})
     full_title_list = soup.find_all('div', {'class': 'title'})
     
@@ -45,5 +47,10 @@ for i in range(3656, 3945):
             'url': url
         }
         
-        json.dump(rtcle, jsonFile, ensure_ascii=False)
-        jsonFile.write('\n')
+        if len(nrec_list[j].findChildren('span', recursive=False)) != 0:
+            if nrec_list[j].findChildren('span', recursive=False)[0].text == '爆':
+                json.dump(rtcle, popularArticlesJsonFile, ensure_ascii=False)
+                popularArticlesJsonFile.write('\n')
+        
+        json.dump(rtcle, allArticlesJsonFile, ensure_ascii=False)
+        allArticlesJsonFile.write('\n')
