@@ -22,12 +22,19 @@ for i in range(3656, 3945):
     full_title_list = soup.find_all('div', {'class': 'title'})
     
     for j in range(len(full_title_list)):
+        if i == 3656 and j < 8:
+            continue
+        elif i == 3944 and j == len(full_title_list) - 5:
+            break
+        
         date = date_list[j]
         date = re.sub('[^0-9]', '', date.text)
         if len(date) == 3:
             date = '0' + date
         
         title = full_title_list[j].findChildren('a', recursive=False)[0].text
+        if str(title).startswith("[公告]") or str(title).startswith("Fw: [公告]"):
+            continue
         
         url = 'https://www.ptt.cc' + \
             full_title_list[j].findChildren('a', recursive=False)[0]['href']
