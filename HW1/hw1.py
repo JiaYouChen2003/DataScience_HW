@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import json
 import re
 import requests
+import sys
 
 payload = {
     'from': '/bbs/Beauty/index.html',
@@ -59,4 +60,5 @@ def crawl():
 
 
 if __name__ == "__main__":
-    crawl()
+    if sys.argv[0] == 'crawl':
+        crawl()
