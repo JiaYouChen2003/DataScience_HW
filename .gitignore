@@ -165,3 +165,4 @@ coverage_re
 # output files
 articles.jsonl
 popular_articles.jsonl
+push_*_*.json

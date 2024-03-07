@@ -24,11 +24,54 @@ def urlToRegularExpression(url):
 
 
 def dictAddKeyValueByOne(inputDict, key):
+    outputDict = inputDict
     if inputDict.get(key) is not None:
-        inputDict[key] = inputDict[key] + 1
+        outputDict[key] = inputDict[key] + 1
     else:
-        inputDict[key] = 1
-    return inputDict
+        outputDict[key] = 1
+    return outputDict
+
+
+def sortAndItemizedDictByValueThenLexicographical(inputDict):
+    itemizedDict = sorted(inputDict.items(), reverse=True)
+    sortedItemizedDict = sorted(itemizedDict, key=lambda item: item[1], reverse=True)
+    return sortedItemizedDict
+
+
+def getPushAndBoo(push, boo):
+    pushAndBoo = {
+        'push': {
+            'total': push[0][1],
+            'top10': [
+                {'user_id': push[1][0], 'count': push[1][1]},
+                {'user_id': push[2][0], 'count': push[2][1]},
+                {'user_id': push[3][0], 'count': push[3][1]},
+                {'user_id': push[4][0], 'count': push[4][1]},
+                {'user_id': push[5][0], 'count': push[5][1]},
+                {'user_id': push[6][0], 'count': push[6][1]},
+                {'user_id': push[7][0], 'count': push[7][1]},
+                {'user_id': push[8][0], 'count': push[8][1]},
+                {'user_id': push[9][0], 'count': push[9][1]},
+                {'user_id': push[10][0], 'count': push[10][1]}
+            ]
+        },
+        'boo': {
+            'total': boo[0][1],
+            'top10': [
+                {'user_id': boo[1][0], 'count': boo[1][1]},
+                {'user_id': boo[2][0], 'count': boo[2][1]},
+                {'user_id': boo[3][0], 'count': boo[3][1]},
+                {'user_id': boo[4][0], 'count': boo[4][1]},
+                {'user_id': boo[5][0], 'count': boo[5][1]},
+                {'user_id': boo[6][0], 'count': boo[6][1]},
+                {'user_id': boo[7][0], 'count': boo[7][1]},
+                {'user_id': boo[8][0], 'count': boo[8][1]},
+                {'user_id': boo[9][0], 'count': boo[9][1]},
+                {'user_id': boo[10][0], 'count': boo[10][1]}
+            ]
+        }
+    }
+    return pushAndBoo
 
 
 def crawl():
@@ -55,7 +98,7 @@ def crawl():
             date = dateToRegularExpression(date)
             
             title = fullTitle_list[j].findChildren('a', recursive=False)[0].text
-            if str(title).startswith("[公告]") or str(title).startswith("Fw: [公告]"):
+            if str(title).startswith('[公告]') or str(title).startswith('Fw: [公告]'):
                 continue
             
             url = fullTitle_list[j].findChildren('a', recursive=False)[0]['href']
@@ -80,6 +123,7 @@ def crawl():
 def push(startDate, endDate):
     allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
     rtcles = []
+    pushAndBooJsonFile = open('push_' + startDate + '_' + endDate + '.json', 'w', encoding='utf8')
     push = {}
     boo = {}
     push['total'] = 0
@@ -107,11 +151,15 @@ def push(startDate, endDate):
                 elif tweetTag == '噓':
                     boo['total'] = boo['total'] + 1
                     boo = dictAddKeyValueByOne(boo, tweetUserID)
-    print(push)
-    print(boo)
+    push = sortAndItemizedDictByValueThenLexicographical(push)
+    boo = sortAndItemizedDictByValueThenLexicographical(boo)
+    
+    pushAndBoo = getPushAndBoo(push, boo)
+    
+    json.dump(pushAndBoo, pushAndBooJsonFile, ensure_ascii=False, indent=4)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     if sys.argv[1] == 'crawl':
         crawl()
     elif sys.argv[1] == 'push':
