@@ -59,6 +59,20 @@ def crawl():
             allArticlesJsonFile.write('\n')
 
 
+def push(startDate, endDate):
+    allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
+    rtcles = []
+    
+    for Article in allArticlesJsonFile:
+        rtcles.append(json.loads(Article))
+    
+    for rtcle in rtcles:
+        if int(rtcle['date']) >= int(startDate) and int(rtcle['date']) <= int(endDate):
+            print(rtcle)
+
+
 if __name__ == "__main__":
-    if sys.argv[0] == 'crawl':
+    if sys.argv[1] == 'crawl':
         crawl()
+    elif sys.argv[1] == 'push':
+        push(sys.argv[2], sys.argv[3])
