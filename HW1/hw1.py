@@ -12,6 +12,25 @@ rs = requests.session()
 rs.post('https://www.ptt.cc/ask/over18', data=payload)
 
 
+def dateToRegularExpression(date):
+    date = re.sub('[^0-9]', '', date.text)
+    if len(date) == 3:
+        date = '0' + date
+    return date
+
+
+def urlToRegularExpression(url):
+    return 'https://www.ptt.cc' + url
+
+
+def dictAddKeyValueByOne(inputDict, key):
+    if inputDict.get(key) is not None:
+        inputDict[key] = inputDict[key] + 1
+    else:
+        inputDict[key] = 1
+    return inputDict
+
+
 def crawl():
     allArticlesJsonFile = open('articles.jsonl', 'w', encoding='utf8')
     popularArticlesJsonFile = open('popular_articles.jsonl', 'w', encoding='utf8')
@@ -24,25 +43,23 @@ def crawl():
         soup = BeautifulSoup(content, 'html.parser')
         nrec_list = soup.find_all('div', {'class': 'nrec'})
         date_list = soup.find_all('div', {'class': 'date'})
-        full_title_list = soup.find_all('div', {'class': 'title'})
+        fullTitle_list = soup.find_all('div', {'class': 'title'})
         
-        for j in range(len(full_title_list)):
+        for j in range(len(fullTitle_list)):
             if i == 3656 and j < 8:
                 continue
-            elif i == 3944 and j == len(full_title_list) - 5:
+            elif i == 3944 and j == len(fullTitle_list) - 5:
                 break
             
             date = date_list[j]
-            date = re.sub('[^0-9]', '', date.text)
-            if len(date) == 3:
-                date = '0' + date
+            date = dateToRegularExpression(date)
             
-            title = full_title_list[j].findChildren('a', recursive=False)[0].text
+            title = fullTitle_list[j].findChildren('a', recursive=False)[0].text
             if str(title).startswith("[公告]") or str(title).startswith("Fw: [公告]"):
                 continue
             
-            url = 'https://www.ptt.cc' + \
-                full_title_list[j].findChildren('a', recursive=False)[0]['href']
+            url = fullTitle_list[j].findChildren('a', recursive=False)[0]['href']
+            url = urlToRegularExpression(url)
             
             rtcle = {
                 'date': date,
@@ -50,25 +67,48 @@ def crawl():
                 'url': url
             }
             
-            if len(nrec_list[j].findChildren('span', recursive=False)) != 0:
-                if nrec_list[j].findChildren('span', recursive=False)[0].text == '爆':
-                    json.dump(rtcle, popularArticlesJsonFile, ensure_ascii=False)
-                    popularArticlesJsonFile.write('\n')
-            
             json.dump(rtcle, allArticlesJsonFile, ensure_ascii=False)
             allArticlesJsonFile.write('\n')
+            
+            nrec = nrec_list[j].findChildren('span', recursive=False)
+            if len(nrec) != 0:
+                if nrec[0].text == '爆':
+                    json.dump(rtcle, popularArticlesJsonFile, ensure_ascii=False)
+                    popularArticlesJsonFile.write('\n')
 
 
 def push(startDate, endDate):
     allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
     rtcles = []
+    push = {}
+    boo = {}
+    push['total'] = 0
+    boo['total'] = 0
     
     for Article in allArticlesJsonFile:
         rtcles.append(json.loads(Article))
     
     for rtcle in rtcles:
         if int(rtcle['date']) >= int(startDate) and int(rtcle['date']) <= int(endDate):
-            print(rtcle)
+            url = rtcle['url']
+            result = rs.get(url)
+            content = result.text
+            
+            soup = BeautifulSoup(content, 'html.parser')
+            tweet_list = soup.find_all('div', {'class': 'push'})
+            
+            for tweet in tweet_list:
+                tweetTag = tweet.findChildren('span', recursive=False)[0].text.strip()
+                tweetUserID = tweet.findChildren('span', recursive=False)[1].text
+                
+                if tweetTag == '推':
+                    push['total'] = push['total'] + 1
+                    push = dictAddKeyValueByOne(push, tweetUserID)
+                elif tweetTag == '噓':
+                    boo['total'] = boo['total'] + 1
+                    boo = dictAddKeyValueByOne(boo, tweetUserID)
+    print(push)
+    print(boo)
 
 
 if __name__ == "__main__":
