@@ -12,6 +12,14 @@ rs = requests.session()
 rs.post('https://www.ptt.cc/ask/over18', data=payload)
 
 
+def isIn2023(i, j, fullTitle_list):
+    if i <= 3656 and j < 8:
+        return False
+    elif i >= 3944 and j == len(fullTitle_list) - 5:
+        return False
+    return True
+
+
 def dateToRegularExpression(date):
     date = re.sub('[^0-9]', '', date.text)
     if len(date) == 3:
@@ -21,6 +29,10 @@ def dateToRegularExpression(date):
 
 def urlToRegularExpression(url):
     return 'https://www.ptt.cc' + url
+
+
+def rtcleIsBetweenDates(rtcle, startDate, endDate):
+    return int(rtcle['date']) >= int(startDate) and int(rtcle['date']) <= int(endDate)
 
 
 def addDictKeyValueByOne(inputDict, key):
@@ -84,10 +96,8 @@ def crawl():
         fullTitle_list = soup.find_all('div', {'class': 'title'})
         
         for j in range(len(fullTitle_list)):
-            if i == 3656 and j < 8:
+            if not isIn2023(i, j, fullTitle_list):
                 continue
-            elif i == 3944 and j == len(fullTitle_list) - 5:
-                break
             
             date = date_list[j]
             date = dateToRegularExpression(date)
@@ -128,7 +138,7 @@ def push(startDate, endDate):
         rtcles.append(json.loads(Article))
     
     for rtcle in rtcles:
-        if int(rtcle['date']) >= int(startDate) and int(rtcle['date']) <= int(endDate):
+        if rtcleIsBetweenDates(rtcle, startDate, endDate):
             url = rtcle['url']
             result = rs.get(url)
             content = result.text
@@ -160,7 +170,7 @@ def popular(startDate, endDate):
         popularRtcles.append(json.loads(popularArticle))
     
     for popularRtcle in popularRtcles:
-        if int(popularRtcle['date']) >= int(startDate) and int(popularRtcle['date']) <= int(endDate):
+        if rtcleIsBetweenDates(popularRtcle, startDate, endDate):
             url = popularRtcle['url']
             result = rs.get(url)
             content = result.text
