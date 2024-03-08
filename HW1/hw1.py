@@ -22,7 +22,7 @@ def getSoupByURL(url):
 def isIn2023(i, j, fullTitle_list):
     if i <= 3656 and j < 8:
         return False
-    elif i >= 3944 and j == len(fullTitle_list) - 5:
+    elif i >= 3944 and j >= len(fullTitle_list) - 5:
         return False
     return True
 
@@ -63,7 +63,7 @@ def dumpPushAndBoo(push, boo, pushAndBooJsonFile):
     
     for i in range(1, 11):
         pushTop10UserID.append({'user_id': push[i][0], 'count': push[i][1]})
-        pushTop10UserID.append({'user_id': boo[i][0], 'count': boo[i][1]})
+        booTop10UserID.append({'user_id': boo[i][0], 'count': boo[i][1]})
     
     pushAndBoo = {
         'push': {
