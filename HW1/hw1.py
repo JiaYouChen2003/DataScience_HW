@@ -60,6 +60,15 @@ def dumpPushAndBoo(push, boo, pushAndBooJsonFile):
     json.dump(pushAndBoo, pushAndBooJsonFile, ensure_ascii=False, indent=4)
 
 
+def isPictureURL(urlText):
+    urlText = str(urlText)
+    if urlText.startswith('http://') or urlText.startswith('https://'):
+        urlText = urlText.lower()
+        if urlText.endswith('.jpg') or urlText.endswith('.jpeg') or urlText.endswith('.png') or urlText.endswith('.gif'):
+            return True
+    return False
+
+
 def crawl():
     allArticlesJsonFile = open('articles.jsonl', 'w', encoding='utf8')
     popularArticlesJsonFile = open('popular_articles.jsonl', 'w', encoding='utf8')
@@ -157,10 +166,12 @@ def popular(startDate, endDate):
             content = result.text
             
             soup = BeautifulSoup(content, 'html.parser')
-            pictureURL_list = soup.find_all('a')
+            urlText_list = soup.find_all('a')
             
-            for pictureURL in pictureURL_list:
-                print(pictureURL.text)
+            for urlText in urlText_list:
+                urlText = urlText.text
+                if isPictureURL(urlText):
+                    print(urlText)
 
 
 if __name__ == '__main__':
