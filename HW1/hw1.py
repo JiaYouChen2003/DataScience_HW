@@ -12,6 +12,13 @@ rs = requests.session()
 rs.post('https://www.ptt.cc/ask/over18', data=payload)
 
 
+def getSoupByURL(url):
+    result = rs.get(url)
+    content = result.text
+    soup = BeautifulSoup(content, 'html.parser')
+    return soup
+
+
 def isIn2023(i, j, fullTitle_list):
     if i <= 3656 and j < 8:
         return False
@@ -90,16 +97,22 @@ def dumpPopularRtcleNumAndImageURLs(popularRtcleNum, popularRtcleImageURLs, popu
     json.dump(popularRtcleNumAndImageURLs, popularArticleNumAndImageURLsJsonFile, ensure_ascii=False, indent=4)
 
 
+def dumpKeywordRtcleImageURLs(keywordRtcleImageURLs, keywordArticleImageURLsJsonFile):
+    keywordRtcleImageURLs = {
+        "image_urls": keywordRtcleImageURLs
+    }
+    
+    json.dump(keywordRtcleImageURLs, keywordArticleImageURLsJsonFile, ensure_ascii=False, indent=4)
+
+
 def crawl():
     allArticlesJsonFile = open('articles.jsonl', 'w', encoding='utf8')
     popularArticlesJsonFile = open('popular_articles.jsonl', 'w', encoding='utf8')
     
     for i in range(3656, 3945):
         url = 'https://www.ptt.cc/bbs/Beauty/index' + str(i) + '.html'
-        result = rs.get(url)
-        content = result.text
+        soup = getSoupByURL(url)
         
-        soup = BeautifulSoup(content, 'html.parser')
         nrec_list = soup.find_all('div', {'class': 'nrec'})
         date_list = soup.find_all('div', {'class': 'date'})
         fullTitle_list = soup.find_all('div', {'class': 'title'})
@@ -149,10 +162,8 @@ def push(startDate, endDate):
     for rtcle in rtcles:
         if rtcleIsBetweenDates(rtcle, startDate, endDate):
             url = rtcle['url']
-            result = rs.get(url)
-            content = result.text
+            soup = getSoupByURL(url)
             
-            soup = BeautifulSoup(content, 'html.parser')
             tweet_list = soup.find_all('div', {'class': 'push'})
             
             for tweet in tweet_list:
@@ -184,11 +195,10 @@ def popular(startDate, endDate):
     for popularRtcle in popularRtcles:
         if rtcleIsBetweenDates(popularRtcle, startDate, endDate):
             popularRtcleNum = popularRtcleNum + 1
-            url = popularRtcle['url']
-            result = rs.get(url)
-            content = result.text
             
-            soup = BeautifulSoup(content, 'html.parser')
+            url = popularRtcle['url']
+            soup = getSoupByURL(url)
+            
             urlText_list = soup.find_all('a')
             
             for urlText in urlText_list:
@@ -201,6 +211,8 @@ def popular(startDate, endDate):
 def keyword(startDate, endDate, keyword):
     allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
     rtcles = []
+    keywordArticleImageURLsJsonFile = open('keyword_' + startDate + '_' + endDate + '_' + keyword + '.json', 'w', encoding='utf8')
+    keywordRtcleImageURLs = []
     
     for Article in allArticlesJsonFile:
         rtcles.append(json.loads(Article))
@@ -208,18 +220,26 @@ def keyword(startDate, endDate, keyword):
     for rtcle in rtcles:
         if rtcleIsBetweenDates(rtcle, startDate, endDate):
             url = rtcle['url']
-            result = rs.get(url)
-            content = result.text
+            soup = getSoupByURL(url)
             
-            soup = BeautifulSoup(content, 'html.parser')
             mainContent = soup.find('div', {'id': 'main-content'})
             
             line_list = mainContent.text.split('\n')
+            allLine = ''
             for line in line_list:
                 line = str(line).strip()
                 if line.startswith('※ 發信站'):
+                    if allLine.find(keyword) != -1:
+                        urlText_list = soup.find_all('a')
+                        
+                        for urlText in urlText_list:
+                            urlText = urlText.text
+                            if isImageURL(urlText):
+                                keywordRtcleImageURLs.append(urlText)
                     break
-                print(line)
+                
+                allLine = allLine + line
+    dumpKeywordRtcleImageURLs(keywordRtcleImageURLs, keywordArticleImageURLsJsonFile)
 
 
 if __name__ == '__main__':
