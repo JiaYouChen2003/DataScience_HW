@@ -198,6 +198,30 @@ def popular(startDate, endDate):
     dumpPopularRtcleNumAndImageURLs(popularRtcleNum, popularRtcleImageURLs, popularArticleNumAndImageURLsJsonFile)
 
 
+def keyword(startDate, endDate, keyword):
+    allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
+    rtcles = []
+    
+    for Article in allArticlesJsonFile:
+        rtcles.append(json.loads(Article))
+    
+    for rtcle in rtcles:
+        if rtcleIsBetweenDates(rtcle, startDate, endDate):
+            url = rtcle['url']
+            result = rs.get(url)
+            content = result.text
+            
+            soup = BeautifulSoup(content, 'html.parser')
+            mainContent = soup.find('div', {'id': 'main-content'})
+            
+            line_list = mainContent.text.split('\n')
+            for line in line_list:
+                line = str(line).strip()
+                if line.startswith('※ 發信站'):
+                    break
+                print(line)
+
+
 if __name__ == '__main__':
     if sys.argv[1] == 'crawl':
         crawl()
@@ -205,3 +229,5 @@ if __name__ == '__main__':
         push(sys.argv[2], sys.argv[3])
     elif sys.argv[1] == 'popular':
         popular(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == 'keyword':
+        keyword(sys.argv[2], sys.argv[3], sys.argv[4])
