@@ -23,7 +23,7 @@ def urlToRegularExpression(url):
     return 'https://www.ptt.cc' + url
 
 
-def dictAddKeyValueByOne(inputDict, key):
+def addDictKeyValueByOne(inputDict, key):
     outputDict = inputDict
     if inputDict.get(key) is not None:
         outputDict[key] = inputDict[key] + 1
@@ -38,40 +38,26 @@ def sortAndItemizedDictByValueThenLexicographical(inputDict):
     return sortedItemizedDict
 
 
-def getPushAndBoo(push, boo):
+def dumpPushAndBoo(push, boo, pushAndBooJsonFile):
+    pushTop10UserID = []
+    booTop10UserID = []
+    
+    for i in range(1, 11):
+        pushTop10UserID.append({'user_id': push[i][0], 'count': push[i][1]})
+        pushTop10UserID.append({'user_id': boo[i][0], 'count': boo[i][1]})
+    
     pushAndBoo = {
         'push': {
             'total': push[0][1],
-            'top10': [
-                {'user_id': push[1][0], 'count': push[1][1]},
-                {'user_id': push[2][0], 'count': push[2][1]},
-                {'user_id': push[3][0], 'count': push[3][1]},
-                {'user_id': push[4][0], 'count': push[4][1]},
-                {'user_id': push[5][0], 'count': push[5][1]},
-                {'user_id': push[6][0], 'count': push[6][1]},
-                {'user_id': push[7][0], 'count': push[7][1]},
-                {'user_id': push[8][0], 'count': push[8][1]},
-                {'user_id': push[9][0], 'count': push[9][1]},
-                {'user_id': push[10][0], 'count': push[10][1]}
-            ]
+            'top10': pushTop10UserID
         },
         'boo': {
             'total': boo[0][1],
-            'top10': [
-                {'user_id': boo[1][0], 'count': boo[1][1]},
-                {'user_id': boo[2][0], 'count': boo[2][1]},
-                {'user_id': boo[3][0], 'count': boo[3][1]},
-                {'user_id': boo[4][0], 'count': boo[4][1]},
-                {'user_id': boo[5][0], 'count': boo[5][1]},
-                {'user_id': boo[6][0], 'count': boo[6][1]},
-                {'user_id': boo[7][0], 'count': boo[7][1]},
-                {'user_id': boo[8][0], 'count': boo[8][1]},
-                {'user_id': boo[9][0], 'count': boo[9][1]},
-                {'user_id': boo[10][0], 'count': boo[10][1]}
-            ]
+            'top10': booTop10UserID
         }
     }
-    return pushAndBoo
+    
+    json.dump(pushAndBoo, pushAndBooJsonFile, ensure_ascii=False, indent=4)
 
 
 def crawl():
@@ -147,16 +133,14 @@ def push(startDate, endDate):
                 
                 if tweetTag == '推':
                     push['total'] = push['total'] + 1
-                    push = dictAddKeyValueByOne(push, tweetUserID)
+                    push = addDictKeyValueByOne(push, tweetUserID)
                 elif tweetTag == '噓':
                     boo['total'] = boo['total'] + 1
-                    boo = dictAddKeyValueByOne(boo, tweetUserID)
+                    boo = addDictKeyValueByOne(boo, tweetUserID)
     push = sortAndItemizedDictByValueThenLexicographical(push)
     boo = sortAndItemizedDictByValueThenLexicographical(boo)
     
-    pushAndBoo = getPushAndBoo(push, boo)
-    
-    json.dump(pushAndBoo, pushAndBooJsonFile, ensure_ascii=False, indent=4)
+    dumpPushAndBoo(push, boo, pushAndBooJsonFile)
 
 
 if __name__ == '__main__':
