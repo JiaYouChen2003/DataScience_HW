@@ -72,13 +72,22 @@ def dumpPushAndBoo(push, boo, pushAndBooJsonFile):
     json.dump(pushAndBoo, pushAndBooJsonFile, ensure_ascii=False, indent=4)
 
 
-def isPictureURL(urlText):
+def isImageURL(urlText):
     urlText = str(urlText)
     if urlText.startswith('http://') or urlText.startswith('https://'):
         urlText = urlText.lower()
         if urlText.endswith('.jpg') or urlText.endswith('.jpeg') or urlText.endswith('.png') or urlText.endswith('.gif'):
             return True
     return False
+
+
+def dumpPopularRtcleNumAndImageURLs(popularRtcleNum, popularRtcleImageURLs, popularArticleNumAndImageURLsJsonFile):
+    popularRtcleNumAndImageURLs = {
+        "number_of_popular_articles": popularRtcleNum,
+        "image_urls": popularRtcleImageURLs
+    }
+    
+    json.dump(popularRtcleNumAndImageURLs, popularArticleNumAndImageURLsJsonFile, ensure_ascii=False, indent=4)
 
 
 def crawl():
@@ -165,12 +174,16 @@ def push(startDate, endDate):
 def popular(startDate, endDate):
     popularArticlesJsonFile = open('popular_articles.jsonl', 'r', encoding='utf8')
     popularRtcles = []
+    popularArticleNumAndImageURLsJsonFile = open('popular_' + startDate + '_' + endDate + '.json', 'w', encoding='utf8')
+    popularRtcleNum = 0
+    popularRtcleImageURLs = []
     
     for popularArticle in popularArticlesJsonFile:
         popularRtcles.append(json.loads(popularArticle))
     
     for popularRtcle in popularRtcles:
         if rtcleIsBetweenDates(popularRtcle, startDate, endDate):
+            popularRtcleNum = popularRtcleNum + 1
             url = popularRtcle['url']
             result = rs.get(url)
             content = result.text
@@ -180,8 +193,9 @@ def popular(startDate, endDate):
             
             for urlText in urlText_list:
                 urlText = urlText.text
-                if isPictureURL(urlText):
-                    print(urlText)
+                if isImageURL(urlText):
+                    popularRtcleImageURLs.append(urlText)
+    dumpPopularRtcleNumAndImageURLs(popularRtcleNum, popularRtcleImageURLs, popularArticleNumAndImageURLsJsonFile)
 
 
 if __name__ == '__main__':

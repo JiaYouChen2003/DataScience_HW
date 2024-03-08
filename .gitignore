@@ -166,3 +166,4 @@ coverage_re
 articles.jsonl
 popular_articles.jsonl
 push_*_*.json
+popular_*_*.json
