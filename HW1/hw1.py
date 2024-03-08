@@ -143,8 +143,30 @@ def push(startDate, endDate):
     dumpPushAndBoo(push, boo, pushAndBooJsonFile)
 
 
+def popular(startDate, endDate):
+    popularArticlesJsonFile = open('popular_articles.jsonl', 'r', encoding='utf8')
+    popularRtcles = []
+    
+    for popularArticle in popularArticlesJsonFile:
+        popularRtcles.append(json.loads(popularArticle))
+    
+    for popularRtcle in popularRtcles:
+        if int(popularRtcle['date']) >= int(startDate) and int(popularRtcle['date']) <= int(endDate):
+            url = popularRtcle['url']
+            result = rs.get(url)
+            content = result.text
+            
+            soup = BeautifulSoup(content, 'html.parser')
+            pictureURL_list = soup.find_all('a')
+            
+            for pictureURL in pictureURL_list:
+                print(pictureURL.text)
+
+
 if __name__ == '__main__':
     if sys.argv[1] == 'crawl':
         crawl()
     elif sys.argv[1] == 'push':
         push(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == 'popular':
+        popular(sys.argv[2], sys.argv[3])
