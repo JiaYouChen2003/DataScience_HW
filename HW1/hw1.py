@@ -1,7 +1,9 @@
 from bs4 import BeautifulSoup
 import json
+import os
 import re
 import requests
+import threading
 import sys
 
 payload = {
@@ -80,7 +82,7 @@ def dumpPushAndBoo(push, boo, pushAndBooJsonFile):
     pushTop10UserID = []
     booTop10UserID = []
     
-    for i in range(1, 11):
+    for i in range(1, min(11, len(push) - 1)):
         pushTop10UserID.append({'user_id': push[i][0], 'count': push[i][1]})
         booTop10UserID.append({'user_id': boo[i][0], 'count': boo[i][1]})
     
@@ -128,8 +130,8 @@ def crawl():
     ijRange = findStartAndEndPoint()
     i_min, j_min, i_max, j_max = ijRange
     
-    allArticlesJsonFile = open('articles.jsonl', 'w', encoding='utf8')
-    popularArticlesJsonFile = open('popular_articles.jsonl', 'w', encoding='utf8')
+    allArticlesJsonFile = open('articles.jsonl', 'a', encoding='utf8')
+    popularArticlesJsonFile = open('popular_articles.jsonl', 'a', encoding='utf8')
     
     for i in range(i_min - 10, i_max + 10):
         url = 'https://www.ptt.cc/bbs/Beauty/index' + str(i) + '.html'
@@ -169,19 +171,8 @@ def crawl():
                     popularArticlesJsonFile.write('\n')
 
 
-def push(startDate, endDate):
-    allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
-    rtcles = []
-    pushAndBooJsonFile = open('push_' + startDate + '_' + endDate + '.json', 'w', encoding='utf8')
-    push = {}
-    boo = {}
-    push['total'] = 0
-    boo['total'] = 0
-    
-    for Article in allArticlesJsonFile:
-        rtcles.append(json.loads(Article))
-    
-    for rtcle in rtcles:
+def process_articles(rtcles, start, end, push, boo, startDate, endDate):
+    for rtcle in rtcles[start:end]:
         if rtcleIsBetweenDates(rtcle, startDate, endDate):
             url = rtcle['url']
             soup = getSoupByURL(url)
@@ -198,6 +189,33 @@ def push(startDate, endDate):
                 elif tweetTag == '噓':
                     boo['total'] = boo['total'] + 1
                     boo = addDictKeyValueByOne(boo, tweetUserID)
+
+
+def push(startDate, endDate):
+    allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
+    pushAndBooJsonFile = open('push_' + startDate + '_' + endDate + '.json', 'a', encoding='utf8')
+    rtcles = [json.loads(Article) for Article in allArticlesJsonFile]
+
+    push = {}
+    boo = {}
+    push['total'] = 0
+    boo['total'] = 0
+    
+    num_cores = os.cpu_count()
+    print(num_cores)
+    articles_per_thread = len(rtcles) // num_cores
+    ranges = [(i * articles_per_thread, (i + 1) * articles_per_thread) for i in range(num_cores - 1)]
+    ranges.append(((num_cores - 1) * articles_per_thread, len(rtcles)))
+    
+    threads = []
+    for i, (start, end) in enumerate(ranges):
+        thread = threading.Thread(target=process_articles, args=(rtcles, start, end, push, boo, startDate, endDate))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
+        
     push = sortAndItemizedDictByValueThenLexicographical(push)
     boo = sortAndItemizedDictByValueThenLexicographical(boo)
     
@@ -207,7 +225,7 @@ def push(startDate, endDate):
 def popular(startDate, endDate):
     popularArticlesJsonFile = open('popular_articles.jsonl', 'r', encoding='utf8')
     popularRtcles = []
-    popularArticleNumAndImageURLsJsonFile = open('popular_' + startDate + '_' + endDate + '.json', 'w', encoding='utf8')
+    popularArticleNumAndImageURLsJsonFile = open('popular_' + startDate + '_' + endDate + '.json', 'a', encoding='utf8')
     popularRtcleNum = 0
     popularRtcleImageURLs = []
     
@@ -233,7 +251,7 @@ def popular(startDate, endDate):
 def keyword(startDate, endDate, keyword):
     allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
     rtcles = []
-    keywordArticleImageURLsJsonFile = open('keyword_' + startDate + '_' + endDate + '_' + keyword + '.json', 'w', encoding='utf8')
+    keywordArticleImageURLsJsonFile = open('keyword_' + startDate + '_' + endDate + '_' + keyword + '.json', 'a', encoding='utf8')
     keywordRtcleImageURLs = []
     
     for Article in allArticlesJsonFile:
