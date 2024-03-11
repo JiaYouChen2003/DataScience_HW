@@ -19,10 +19,29 @@ def getSoupByURL(url):
     return soup
 
 
-def isIn2023(i, j, fullTitle_list):
-    if i <= 3656 and j < 8:
-        return False
-    elif i >= 3944 and j >= len(fullTitle_list) - 5:
+def findStartAndEndPoint():
+    i_min = 0
+    j_min = 0
+    i_max = 0
+    j_max = 0
+    for i in range(3600, 3945):
+        url = 'https://www.ptt.cc/bbs/Beauty/index' + str(i) + '.html'
+        soup = getSoupByURL(url)
+        fullTitle_list = soup.find_all('div', {'class': 'title'})
+        for j in range(len(fullTitle_list)):
+            title = fullTitle_list[j].findChildren('a', recursive=False)[0].text
+            if str(title).startswith('[正妹] 孟潔MJ'):
+                i_min = i
+                j_min = j + 1
+            if str(title).startswith('[正妹] 趙露思跨年晚會'):
+                i_max = i
+                j_max = j + 2
+    return [i_min, j_min, i_max, j_max]
+
+
+def isIn2023(i, j, ijRange):
+    i_min, j_min, i_max, j_max = ijRange
+    if i < i_min or (i == i_min and j < j_min) or (i == i_max and j >= j_max) or i > i_max:
         return False
     return True
 
@@ -106,10 +125,13 @@ def dumpKeywordRtcleImageURLs(keywordRtcleImageURLs, keywordArticleImageURLsJson
 
 
 def crawl():
+    ijRange = findStartAndEndPoint()
+    i_min, j_min, i_max, j_max = ijRange
+    
     allArticlesJsonFile = open('articles.jsonl', 'w', encoding='utf8')
     popularArticlesJsonFile = open('popular_articles.jsonl', 'w', encoding='utf8')
     
-    for i in range(3656, 3945):
+    for i in range(i_min - 10, i_max + 10):
         url = 'https://www.ptt.cc/bbs/Beauty/index' + str(i) + '.html'
         soup = getSoupByURL(url)
         
@@ -118,7 +140,7 @@ def crawl():
         fullTitle_list = soup.find_all('div', {'class': 'title'})
         
         for j in range(len(fullTitle_list)):
-            if not isIn2023(i, j, fullTitle_list):
+            if not isIn2023(i, j, ijRange):
                 continue
             
             date = date_list[j]
