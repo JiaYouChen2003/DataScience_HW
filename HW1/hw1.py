@@ -171,7 +171,7 @@ def crawl():
                     popularArticlesJsonFile.write('\n')
 
 
-def process_articles(rtcles, start, end, push, boo, startDate, endDate):
+def processArticles(rtcles, start, end, push, boo, startDate, endDate):
     for rtcle in rtcles[start:end]:
         if rtcleIsBetweenDates(rtcle, startDate, endDate):
             url = rtcle['url']
@@ -195,21 +195,20 @@ def push(startDate, endDate):
     allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
     pushAndBooJsonFile = open('push_' + startDate + '_' + endDate + '.json', 'a', encoding='utf8')
     rtcles = [json.loads(Article) for Article in allArticlesJsonFile]
-
+    
     push = {}
     boo = {}
     push['total'] = 0
     boo['total'] = 0
     
-    num_cores = os.cpu_count()
-    print(num_cores)
-    articles_per_thread = len(rtcles) // num_cores
-    ranges = [(i * articles_per_thread, (i + 1) * articles_per_thread) for i in range(num_cores - 1)]
-    ranges.append(((num_cores - 1) * articles_per_thread, len(rtcles)))
+    numCores = os.cpu_count()
+    articlesPerThread = len(rtcles) // numCores
+    ranges = [(i * articlesPerThread, (i + 1) * articlesPerThread) for i in range(numCores - 1)]
+    ranges.append(((numCores - 1) * articlesPerThread, len(rtcles)))
     
     threads = []
     for i, (start, end) in enumerate(ranges):
-        thread = threading.Thread(target=process_articles, args=(rtcles, start, end, push, boo, startDate, endDate))
+        thread = threading.Thread(target=processArticles, args=(rtcles, start, end, push, boo, startDate, endDate))
         threads.append(thread)
         thread.start()
     
@@ -229,8 +228,7 @@ def popular(startDate, endDate):
     popularRtcleNum = 0
     popularRtcleImageURLs = []
     
-    for popularArticle in popularArticlesJsonFile:
-        popularRtcles.append(json.loads(popularArticle))
+    popularRtcles = [json.loads(popularArticle) for popularArticle in popularArticlesJsonFile]
     
     for popularRtcle in popularRtcles:
         if rtcleIsBetweenDates(popularRtcle, startDate, endDate):
@@ -248,16 +246,10 @@ def popular(startDate, endDate):
     dumpPopularRtcleNumAndImageURLs(popularRtcleNum, popularRtcleImageURLs, popularArticleNumAndImageURLsJsonFile)
 
 
-def keyword(startDate, endDate, keyword):
-    allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
-    rtcles = []
-    keywordArticleImageURLsJsonFile = open('keyword_' + startDate + '_' + endDate + '_' + keyword + '.json', 'a', encoding='utf8')
-    keywordRtcleImageURLs = []
+def processKeyword(rtcles, start, end, keyword, result_list, startDate, endDate):
+    keyword_rtcle_image_urls = []
     
-    for Article in allArticlesJsonFile:
-        rtcles.append(json.loads(Article))
-    
-    for rtcle in rtcles:
+    for rtcle in rtcles[start:end]:
         if rtcleIsBetweenDates(rtcle, startDate, endDate):
             url = rtcle['url']
             soup = getSoupByURL(url)
@@ -275,11 +267,36 @@ def keyword(startDate, endDate, keyword):
                         for urlText in urlText_list:
                             urlText = urlText.text
                             if isImageURL(urlText):
-                                keywordRtcleImageURLs.append(urlText)
+                                keyword_rtcle_image_urls.append(urlText)
                     break
                 
                 allLine = allLine + line
-    dumpKeywordRtcleImageURLs(keywordRtcleImageURLs, keywordArticleImageURLsJsonFile)
+    result_list.extend(keyword_rtcle_image_urls)
+
+
+def keyword(startDate, endDate, keyword):
+    allArticlesJsonFile = open('articles.jsonl', 'r', encoding='utf8')
+    keywordArticleImageURLsJsonFile = open('keyword_' + startDate + '_' + endDate + '_' + keyword + '.json', 'a', encoding='utf8')
+    
+    rtcles = [json.loads(Article) for Article in allArticlesJsonFile]
+    
+    numCores = os.cpu_count()
+    rtclesPerThread = len(rtcles) // numCores
+    ranges = [(i * rtclesPerThread, (i + 1) * rtclesPerThread) for i in range(numCores - 1)]
+    ranges.append(((numCores - 1) * rtclesPerThread, len(rtcles)))
+    
+    threads = []
+    result_list = []
+    
+    for _, (start, end) in enumerate(ranges):
+        thread = threading.Thread(target=processKeyword, args=(rtcles, start, end, keyword, result_list, startDate, endDate))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
+    
+    dumpKeywordRtcleImageURLs(result_list, keywordArticleImageURLsJsonFile)
 
 
 if __name__ == '__main__':
