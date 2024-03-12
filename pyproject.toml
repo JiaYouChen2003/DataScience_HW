@@ -1,0 +1,16 @@
+[tool.pytest.ini_options]
+markers = [
+    "hw1: marks tests as hw1 (deselect with '-m \"not hw1\"')",
+    "longExecuteTime: marks tests as longExecuteTime (deselect with '-m \"not longExecuteTime\"')",
+]
+[tool.flake8]
+per-file-ignores = [
+    "__init__.py: F401"
+]
+ignore = [
+    "E128",
+    "E501",
+    "F403",
+    "F405",
+    "W293"
+]
