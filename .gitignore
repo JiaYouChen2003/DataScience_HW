@@ -168,3 +168,7 @@ popular_articles.jsonl
 push_*_*.json
 popular_*_*.json
 keyword_*_*_*.json
+record.txt
+
+# input files
+palm_key.txt
