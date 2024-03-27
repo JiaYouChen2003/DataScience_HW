@@ -168,7 +168,8 @@ popular_articles.jsonl
 push_*_*.json
 popular_*_*.json
 keyword_*_*_*.json
-record.txt
+hw2_record.txt
+hw2_output.csv
 
 # input files
 palm_key.txt

@@ -109,7 +109,7 @@ if __name__ == '__main__':
         preds.append(pred)
         labels.append(label)
         
-    with open('./record.txt', 'a') as file:
+    with open('./hw2_record.txt', 'a') as file:
         score = pb.Eval.compute_cls_accuracy(preds, labels)
         file.write(f'{score:.3f}, {prompt}' + '\n' + '\n')
         print(f'{score:.3f}, {prompt}' + '\n' + '\n')
