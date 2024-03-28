@@ -116,7 +116,7 @@ def downloadPhoto():
     
     popularThreads = []
     for _, (start, end) in enumerate(ranges):
-        thread = threading.Thread(target=downloadPopularPhotos, args=(popularPhotoArticles[start:end], './assets/popular/', start))
+        thread = threading.Thread(target=downloadPopularPhotos, args=(popularPhotoArticles[start:end], './assets/hw1_popularPhoto/', start))
         popularThreads.append(thread)
         thread.start()
     
@@ -129,7 +129,7 @@ def downloadPhoto():
     
     notPopularThreads = []
     for _, (start, end) in enumerate(ranges):
-        thread = threading.Thread(target=downloadNotPopularPhotos, args=(notPopularPhotoArticles[start:end], './assets/notPopular/', start))
+        thread = threading.Thread(target=downloadNotPopularPhotos, args=(notPopularPhotoArticles[start:end], './assets/hw1_notPopularPhoto/', start))
         notPopularThreads.append(thread)
         thread.start()
     
