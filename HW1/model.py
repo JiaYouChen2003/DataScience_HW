@@ -13,12 +13,18 @@ import tqdm
 class ResNet50_FC(nn.Module):
     def __init__(self, num_classes=1):
         super(ResNet50_FC, self).__init__()
-        self.fc = nn.Linear(1000, num_classes)
+        self.model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
+        self.fc1 = nn.Linear(1000, 100)
+        self.fc2 = nn.Linear(100, 10)
+        self.fc3 = nn.Linear(10, num_classes)
         self.sigmoid = nn.Sigmoid()
     
     def forward(self, x):
+        x = self.model(x)
         x = x.view(x.size(0), -1)
-        x = self.fc(x)
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
         x = self.sigmoid(x)
         return x
 
@@ -50,6 +56,7 @@ def load_data(dataset_path):
             
             images.append(image_array)
             labels.append(classes.index(class_name))
+    print(labels[-1])
     print(np.array(images).shape)
     print(np.array(labels).size)
     return np.array(images), np.array(labels)
@@ -59,15 +66,14 @@ if __name__ == "__main__":
     data, label = load_data('./assets')
     data_train, data_test, label_train, label_test = train_test_split(data, label, test_size=0.2, random_state=42)
     
-    model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
-    model_fc = ResNet50_FC()
+    model_plus_fc = ResNet50_FC()
     criterion = nn.BCELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model_plus_fc.parameters(), lr=0.001)
     
     num_epochs = 100
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
-    model.to(device)
+    model_plus_fc.to(device)
     
     for epoch in range(num_epochs):
         inputs = None
@@ -75,7 +81,7 @@ if __name__ == "__main__":
         batch_count = 0
         for i, input in enumerate(tqdm.tqdm(data_train)):
             label = label_train[i]
-            if label == 0 and random.random() > 0.25:
+            if label == 0 and random.random() > 0.725:
                 continue
             input = torch.from_numpy(input.astype(np.float32)).permute(2, 0, 1).unsqueeze(0).to(device)
             
@@ -89,8 +95,7 @@ if __name__ == "__main__":
             if batch_count % 32 == 31:
                 labels = torch.tensor(labels).to(device)
                 optimizer.zero_grad()
-                outputs = model(inputs)
-                outputs = model_fc(outputs)
+                outputs = model_plus_fc(inputs)
                 loss = criterion(outputs, labels.float().view(-1, 1))
                 loss.backward()
                 optimizer.step()
@@ -102,4 +107,4 @@ if __name__ == "__main__":
             batch_count += 1
         
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
-        torch.save(model.state_dict(), './ckpt/ckpt_' + str(epoch) + '.pth')
+        torch.save(model_plus_fc.state_dict(), './ckpt/ckpt_' + str(epoch) + '.pth')
