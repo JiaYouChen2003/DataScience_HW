@@ -28,6 +28,18 @@ class ResNet50_FC(nn.Module):
         return x
 
 
+def load_image_array(image_path):
+    image = cv2.imread(image_path)
+    try:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    except Exception:
+        return None
+    
+    image = cv2.resize(image, (32, 32))
+    
+    return np.array(image)
+
+
 def load_data(dataset_path):
     images = []
     labels = []
@@ -43,15 +55,10 @@ def load_data(dataset_path):
         
         for i, image_file in enumerate(tqdm.tqdm(image_files)):
             image_path = os.path.join(class_path, image_file)
-            image = cv2.imread(image_path)
-            try:
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            except Exception:
+            
+            image_array = load_image_array(image_path)
+            if image_array is None:
                 continue
-            
-            image = cv2.resize(image, (32, 32))
-            
-            image_array = np.array(image)
             
             images.append(image_array)
             labels.append(classes.index(class_name))
