@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import os
 import random
-from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -62,9 +61,8 @@ def load_data(dataset_path):
     return np.array(images), np.array(labels)
 
 
-if __name__ == "__main__":
-    data, label = load_data('./assets')
-    data_train, data_test, label_train, label_test = train_test_split(data, label, test_size=0.2, random_state=42)
+def main():
+    data_all, labels_all = load_data('./assets')
     
     model_plus_fc = ResNet50_FC()
     criterion = nn.BCELoss()
@@ -79,9 +77,9 @@ if __name__ == "__main__":
         inputs = None
         labels = []
         batch_count = 0
-        for i, input in enumerate(tqdm.tqdm(data_train)):
-            label = label_train[i]
-            if label == 0 and random.random() > 0.725:
+        for i, input in enumerate(tqdm.tqdm(data_all)):
+            label = labels_all[i]
+            if label == 0 and random.random() > 0.275:
                 continue
             input = torch.from_numpy(input.astype(np.float32)).permute(2, 0, 1).unsqueeze(0).to(device)
             
@@ -99,6 +97,7 @@ if __name__ == "__main__":
                 loss = criterion(outputs, labels.float().view(-1, 1))
                 loss.backward()
                 optimizer.step()
+                
                 inputs = None
                 labels = []
                 with open('./loss/hw1_loss_random.txt', 'a') as file:
@@ -108,3 +107,7 @@ if __name__ == "__main__":
         
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
         torch.save(model_plus_fc.state_dict(), './ckpt/ckpt_' + str(epoch) + '.pth')
+
+
+if __name__ == "__main__":
+    main()
