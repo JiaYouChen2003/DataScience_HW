@@ -170,6 +170,11 @@ popular_*_*.json
 keyword_*_*_*.json
 hw2_record.txt
 hw2_output.csv
+popular_photo_articles.jsonl
+not_popular_photo_articles.jsonl
+HW1/assets/
+HW1/ckpt/
+HW1/loss/
 
 # input files
 palm_key.txt
